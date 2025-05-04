@@ -3,6 +3,9 @@ import pandas as pd
 import scipy.io 
 import matplotlib.pyplot as plt
 import control as ctrl
+from control.matlab import tf, step
+from scipy.optimize import minimize
+from Graficos import plt_dataset, plt_modelo, plt_modelo_ajustado
 
 def load_dataset():
   '''Tranformando arquivo .mat em um dataset'''
@@ -26,61 +29,6 @@ def load_dataset():
 
   print(df.head())
   return df
-
-def plt_dataset(dataset):
-  '''Mostra os graficos de Temp X Tempo e Est.físico X Tempo com as dados do dataset'''
-  # Criar os subplots lado a lado
-  plt.figure(figsize=(12, 6))
-
-  # Gráfico 1 - Temperatura (Entrada)
-  plt.subplot(1, 2, 1)
-  plt.plot(dataset['Tempo'], dataset['Temperatura'], color='blue')
-  plt.xlabel('Tempo (s)')
-  plt.ylabel('Temperatura (°C)')
-  plt.title('Simulação de Temperatura ao Longo do Tempo')
-
-  # Gráfico 2 - Resultado Físico (Saída)
-  plt.subplot(1, 2, 2)
-  plt.plot(dataset['Tempo'], dataset['Resultado Fisico'], color='green')
-  plt.xlabel('Tempo (s)')
-  plt.ylabel('Resultado Físico')
-  plt.title('Resposta do Sistema (Resultado Físico)')
-
-  # Ajustar layout para não sobrepor elementos
-  plt.tight_layout()
-  plt.show()
-
-def metodo_sundaresan(tempo, resposta):
-  """
-  Aplica o método de Sundaresan e Krishnaswamy para estimar K, tau e theta.
-
-  Parâmetros:
-  - tempo: vetor com os instantes de tempo
-  - resposta: vetor com os valores da variável de Estado Físico
-
-  Retorna:
-  - K: ganho estático
-  - tau: constante de tempo do sistema
-  - theta: tempo morto (delay)
-  """
-
-  # Normaliza a resposta
-  resposta_normalizada = (resposta - resposta[0]) / (resposta[-1] - resposta[0])
-
-  # Define os níveis de 35,3% e 85,3% da resposta
-  y1_target = 0.353
-  y2_target = 0.853
-
-  # Encontra os tempos correspondentes a esses pontos
-  t1 = np.interp(y1_target, resposta_normalizada, tempo)
-  t2 = np.interp(y2_target, resposta_normalizada, tempo)
-
-  # Calcula os parâmetros
-  tau = 1.3 * (t2 - t1)
-  theta = t1 - 0.29 * (t2 - t1)
-  K = resposta[-1] - resposta[0]
-
-  return K, tau, theta
 
 def metodo_smith(tempo, resposta, u0=0, uf=1):
     """
@@ -142,17 +90,36 @@ def funcao_transferencia(k, tau, theta, ordem_pade=1):
   G = ctrl.series(atraso_pade, G_sem_atraso)
   return G
 
-def plt_func_tranferencia(dataset, t, f):
-  plt.figure(figsize=(10, 5))
-  plt.plot(t, f, label='Modelo (FOPDT)', linewidth=2)
-  plt.plot(dataset['Tempo'], dataset['Resultado Fisico'], label='Dados experimentais', linestyle='--', linewidth=2)
-  plt.xlabel('Tempo (s)')
-  plt.ylabel('Resposta (Resultado Físico)')
-  plt.title('Comparação: Modelo vs Dados Reais')
-  plt.grid(True)
-  plt.legend()
-  plt.tight_layout()
-  plt.show()
+
+
+
+def calcular_erro(params, dataset):
+    k, tau, theta = params
+    if tau <= 0 or theta < 0:
+        return np.inf
+    try:
+        H = funcao_transferencia(k, tau, theta)
+        t_sim, y_sim = ctrl.step_response(H, T=dataset['Tempo'].values)
+        erro = np.mean((dataset['Resultado Fisico'].values - y_sim) ** 2)
+        return erro
+    except:
+        return np.inf  # Em caso de erro numérico
+
+# Otimização dos parâmetros
+def ajustar_parametros(k, tau, theta, dataset):
+    resultado = minimize(
+        calcular_erro, 
+        [k, tau, theta], 
+        args=(dataset,), 
+        method='Nelder-Mead'
+    )
+    parametros_otimizados = resultado.x
+    H_otimizado = funcao_transferencia(*parametros_otimizados)
+    return parametros_otimizados, H_otimizado
+
+
+
+
 
 
 
@@ -162,16 +129,24 @@ dataset = load_dataset()
 # Mostra os dados iniciais 
 plt_dataset(dataset)
 
-#Calculo do metodo de Sundaresan
-k, tau, theta = metodo_sundaresan(dataset['Tempo'].values, dataset['Resultado Fisico'].values)
+# Calculo pelo metodo de Smith
+k, tau, theta = metodo_smith(dataset['Tempo'].values, dataset['Resultado Fisico'].values)
 
 # Calculo da func. de Tranferencia
-H_sundaresan = funcao_transferencia(k, tau, theta)
+H_smith = funcao_transferencia(k, tau, theta)
 
 # Calcula a resposta no tempo da função de transferencia
-t_sundaresan, f_sundaresan = ctrl.step_response(H_sundaresan)
+t_smith, f_smith = ctrl.step_response(H_smith)
 
-# Grafico da Função de Tranferencia
-plt_func_tranferencia(dataset, t_sundaresan, f_sundaresan)
+# Grafico com o Modelo da Função de Tranferencia
+plt_modelo(dataset, t_smith, f_smith)
+
+# Ajuste de parametros para o método de smith
+(parametros_ajustados, H_ajustado) = ajustar_parametros(k, tau, theta, dataset)
+t_ajustado, f_ajustado = ctrl.step_response(H_ajustado)
+
+plt_modelo_ajustado(t_smith, f_smith, t_ajustado, f_ajustado, dataset)
+
+
 
 
