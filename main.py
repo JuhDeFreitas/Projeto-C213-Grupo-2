@@ -90,9 +90,6 @@ def funcao_transferencia(k, tau, theta, ordem_pade=1):
   G = ctrl.series(atraso_pade, G_sem_atraso)
   return G
 
-
-
-
 def calcular_erro(params, dataset):
     k, tau, theta = params
     if tau <= 0 or theta < 0:
@@ -105,7 +102,6 @@ def calcular_erro(params, dataset):
     except:
         return np.inf  # Em caso de erro numérico
 
-# Otimização dos parâmetros
 def ajustar_parametros(k, tau, theta, dataset):
     resultado = minimize(
         calcular_erro, 
@@ -116,8 +112,6 @@ def ajustar_parametros(k, tau, theta, dataset):
     parametros_otimizados = resultado.x
     H_otimizado = funcao_transferencia(*parametros_otimizados)
     return parametros_otimizados, H_otimizado
-
-
 
 
 
