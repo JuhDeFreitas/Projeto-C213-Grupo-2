@@ -8,10 +8,10 @@ from control.matlab import tf, feedback, step
 import sistema_PID as pid
 
 # === Carregar Dataset ===
-df = pd.read_csv("Dataset_Grupo.csv")
-t = df['tempo_s'].values
-u = df['entrada_u'].values
-y = df['saida_y'].values
+df = pid.dataset
+t = df['Tempo'].values
+u = df['Temperatura'].values
+y = df['Resultado Fisico'].values
 
 # === Identificação com Sundaresan ===
 final_value = np.mean(y[int(len(y)*0.9):])
@@ -46,9 +46,9 @@ def simular():
         td = 4 * theta / (11 + 2 * (theta / tau))
     else:
         try:
-            kp = float(entry_k.get())
-            ti = float(entry_tau.get())
-            td = float(entry_theta.get())
+            kp = float(entry_kp.get())
+            ti = float(entry_ti.get())
+            td = float(entry_td.get())
         except:
             output_label.config(text="Erro: valores manuais inválidos.")
             return
@@ -80,26 +80,26 @@ metodo_menu = ttk.Combobox(frame, textvariable=metodo_var, values=["Ziegler-Nich
 metodo_menu.grid(row=0, column=1)
 
 #Entrada de dados pelo usuàrio
-ttk.Label(frame, text="K:").grid(row=1, column=0)
-entry_k = ttk.Entry(frame)
-entry_k.grid(row=1, column=1)
+ttk.Label(frame, text="Kp:").grid(row=1, column=0)
+entry_kp = ttk.Entry(frame)
+entry_kp.grid(row=1, column=1)
 
-ttk.Label(frame, text="T:").grid(row=2, column=0)
-entry_tau = ttk.Entry(frame)
-entry_tau.grid(row=2, column=1)
+ttk.Label(frame, text="Ti:").grid(row=2, column=0)
+entry_ti = ttk.Entry(frame)
+entry_ti.grid(row=2, column=1)
 
-ttk.Label(frame, text="θ:").grid(row=3, column=0)
-entry_theta = ttk.Entry(frame)
-entry_theta.grid(row=3, column=1)
+ttk.Label(frame, text="Td:").grid(row=3, column=0)
+entry_td = ttk.Entry(frame)
+entry_td.grid(row=3, column=1)
 
 ttk.Label(frame, text="Set Point:").grid(row=4, column=0)
 entry_setpoint = ttk.Entry(frame)
 entry_setpoint.grid(row=4, column=1)
 
 
-ttk.Button(frame, text="Simular", command=simular).grid(row=4, columnspan=2, pady=10)
+ttk.Button(frame, text="Simular", command=simular).grid(row=5, columnspan=2, pady=10)
 output_label = ttk.Label(frame, text="Parâmetros PID aparecerão aqui.")
-output_label.grid(row=5, columnspan=2)
+output_label.grid(row=6, columnspan=2)
 
 # === Gráfico ===
 fig, ax = plt.subplots(figsize=(6, 4))
