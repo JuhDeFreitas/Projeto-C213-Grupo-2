@@ -52,6 +52,8 @@ O projeto busca aplicar um sistema controlado PID para o controle da temperatura
 
   <div align="center">
   <img src="image-4.png" alt="alt text" width="500"/>
+  </div>
+  </div>
   <img src="image-5.png" alt="alt text" width="500"/>
   </div>
 
