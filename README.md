@@ -29,7 +29,11 @@ O projeto busca aplicar um sistema controlado PID para o controle da temperatura
   ![alt text](image-2.png)
 
 4) Implementação dos métodos de sintonia Ziegler-Nichols e Cohen-Coon para calculo dos parametros do PID
-5) Implementação do controle PID
-4) Comparação entre os sistemas de malha aberta e fechada 
 
+  
+5) Implementação do controle PID
+
+
+6) Comparação entre os sistemas de malha aberta e fechada 
+  ![alt text](image-3.png)
 
