@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 def plt_dataset(dataset):
     '''Mostra os graficos de Temp X Tempo e Est.físico X Tempo com as dados do dataset'''
@@ -60,6 +61,29 @@ def plt_modelo_ajustado(t, f, t_ajustado, f_ajustado, dataset):
     plt.legend()
     plt.tight_layout()
     plt.show()
+
+
+def plt_Ziegler_Nichols(ax, canvas, t_modelo, f_modelo, t_pid, f_pid):
+    
+    # Encontra o primeiro índice onde f > 0
+    idx = np.argmax(f_pid > 0)
+
+    # Corta os vetores a partir desse índice
+    t_pid = t_pid[idx:]
+    f_pid = f_pid[idx:]
+    
+    ax.clear()
+    ax.plot(t_modelo, f_modelo, label="Resposta Original", color="gray")
+    ax.plot(t_pid, f_pid, label="Controle Ziegler-Nichols (PID)", linestyle="--", color="red")
+
+    ax.set_title("Resposta da Malha Fechada com Controle PID (Ziegler-Nichols)")
+    ax.set_xlabel("Tempo (s)")
+    ax.set_ylabel("Temperatura (°C)")
+    ax.grid(True)
+    ax.legend()
+    canvas.draw()
+    
+    
 
 def plt_malhas(t1, f1, t2, f2, t3, f3):
     '''Mostra três gráficos de Resultado Físico X Tempo comparando malha aberta e controladas'''

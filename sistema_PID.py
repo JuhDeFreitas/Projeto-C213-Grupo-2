@@ -50,19 +50,22 @@ def metodo_smith(tempo, resposta, u0=0, uf=1):
 
     return k, tau, theta
 
-def funcao_transferencia(k, tau, theta, ordem_pade=1):
+def funcao_transferencia(k, tau, theta, t, ordem_pade=1):
   """  Gera a função de transferência de um sistema FOPDT  """
 
   # Parte sem atraso
-  G_sem_atraso = ctrl.tf([k], [tau, 1])
+  H_sem_atraso = ctrl.tf([k], [tau, 1])
 
   # Aproximação de Padé para o atraso
   num_pade, den_pade = ctrl.pade(theta, ordem_pade)
   atraso_pade = ctrl.tf(num_pade, den_pade)
 
   # Combinando
-  G = ctrl.series(atraso_pade, G_sem_atraso)
-  return G
+  funcao = ctrl.series(atraso_pade, H_sem_atraso)
+
+  # Simula H em malha aberta
+  H_malha_aberta =  ctrl.step_response(funcao, T=t)
+  return funcao, H_malha_aberta
 
 def ziegler_nichols(k, tau, theta):
     Kp = 1.2 * tau / (k * theta)
@@ -71,7 +74,7 @@ def ziegler_nichols(k, tau, theta):
     Ki = Kp / ti
     Kd = Kp * td
     print("\n\nk, tau, theta em ziegle nichols: ", Kp, Ki, Kd)
-    return Kp, Ki, Kd
+    return Kp, Ki, Kd, ti, td
 
 def cohen_coon(K, tau, theta):
     if tau == 0 or theta == 0 or K == 0:
@@ -85,49 +88,48 @@ def cohen_coon(K, tau, theta):
     ki = kp / ti
     kd = kp * td
 
-    return kp,ki,kd
+    return kp,ki,kd,ti,td
 
-def cria_malha_fechada(kp, ki, kd, malha_aberta):
+def cria_malha_fechada(kp, ki, kd, malha_aberta,setpoint, t):
    # Cria o controlador PID
   PID = ctrl.tf([kd, kp, ki], [1, 0])  # Forma: Kp + Ki/s + Kd*s
 
   # Fecha a malha com realimentação
-  h_fechada = ctrl.feedback(PID * malha_aberta, 1)
+  funcao = ctrl.feedback(PID * (malha_aberta), 1) 
+  h_malha_fechada = ctrl.step_response(funcao * setpoint, T=t)
 
-  return h_fechada
+  return funcao, h_malha_fechada
 
-def analisar_resposta(t, y, ref=1.0, tolerancia=0.02):
-    y_final = y[-1]
+def analisar_parametros(t, f, ref=1.0, tolerancia=0.02):
+    f_final = f[-1]
     
     # Tempo de subida: de 10% a 90% do valor final
-    idx_10 = np.argmax(y >= 0.1 * y_final)
-    idx_90 = np.argmax(y >= 0.9 * y_final)
+    idx_10 = np.argmax(f >= 0.1 * f_final)
+    idx_90 = np.argmax(f >= 0.9 * f_final)
     tempo_subida = t[idx_90] - t[idx_10]
 
     # Tempo de acomodação: quando entra e permanece dentro da faixa de tolerância
-    superior = y_final * (1 + tolerancia)
-    inferior = y_final * (1 - tolerancia)
-
-    for i in range(len(y)-1, -1, -1):
-        if y[i] > superior or y[i] < inferior:
+    superior = f_final * (1 + tolerancia)
+    inferior = f_final * (1 - tolerancia)
+    for i in range(len(f)-1, -1, -1):
+        if f[i] > superior or f[i] < inferior:
             tempo_acomodacao = t[i+1]
             break
     else:
         tempo_acomodacao = 0  # Se nunca saiu, já estava acomodado
 
     # Erro em regime permanente
-    erro_regime = abs(ref - y_final)
+    erro_regime = abs(ref - f_final)
 
     # Pico máximo (overshoot)
-    pico_maximo = np.max(y)
-    tempo_pico = t[np.argmax(y)]
-    overshoot_percent = ((pico_maximo - y_final) / y_final) * 100 if y_final != 0 else 0
+    pico_maximo = np.max(f)
+    tempo_pico = t[np.argmax(f)]
+    overshoot_percent = ((pico_maximo - f_final) / f_final) * 100 if f_final != 0 else 0
 
     return tempo_subida, tempo_acomodacao, erro_regime, pico_maximo, tempo_pico, overshoot_percent
 
 
-
-
+'''
 # Carrega o dataset
 dataset = load_dataset()
 
@@ -136,42 +138,34 @@ plt_dataset(dataset)
 
 # Calculo pelo metodo de Smith
 k, tau, theta = metodo_smith(dataset['Tempo'].values, dataset['Resultado Fisico'].values)
-print(f"Smith -  k: {k}, tau: {tau}, theta: {theta}")
+
+t = dataset['Tempo'].astype(float).values
 
 # Calculo da func. de Tranferencia
-H = funcao_transferencia(k, tau, theta)
-
-# Calcula a resposta no tempo da função de transferencia
-tempo_sim = dataset['Tempo'].astype(float).values
-t_smith, f_smith = ctrl.step_response(H, T=tempo_sim)
+funcao_H, malha_aberta = funcao_transferencia(k, tau, theta, t)
 
 # Grafico com o Modelo da Função de Tranferencia
-plt_modelo(dataset, t_smith, f_smith)
+plt_modelo(dataset, *malha_aberta)
 
-#Definição da malha aberta = função de transferencia
-malha_aberta = H
+setpoint = 100 #media dos valores da entrada
 
-# Cria malha fechada com cada um dos métodos de controle
-malha_fechada_Ziegler = cria_malha_fechada(*ziegler_nichols(k, tau, theta), malha_aberta)
-malha_fechada_Cohen = cria_malha_fechada(*cohen_coon(k, tau, theta), malha_aberta)
+# Malha fechada Ziegler Nichols
+kp, ki, kd, ti, td = ziegler_nichols(k, tau, theta)
+funcao_Ziegler, malha_fechada_Ziegler = cria_malha_fechada(kp, ki, kd, funcao_H, setpoint, t)
 
-# Simulando ambas as malhas
-t1, f1 = ctrl.step_response(malha_aberta, T=tempo_sim)
-t2, f2 = ctrl.step_response(malha_fechada_Ziegler, T=tempo_sim)
-t3, f3 = ctrl.step_response(malha_fechada_Cohen, T=tempo_sim)
+# Malha fechada Cohen Coon
+kp, ki, kd, ti, td = cohen_coon(k, tau, theta)
+funcao_Cohen, malha_fechada_Cohen = cria_malha_fechada(kp, ki, kd, funcao_H, setpoint, t)
 
-pontos_malha_aberta = analisar_resposta(t1, f1)
-pontos_ziegler_nichols = analisar_resposta(t2, f2)
-pontos_cohen_coon = analisar_resposta(t3,f3)
+pontos_malha_aberta = analisar_parametros(*malha_aberta)
+pontos_ziegler_nichols = analisar_parametros(*malha_fechada_Ziegler)
+pontos_cohen_coon = analisar_parametros(*malha_fechada_Cohen)
 
 print("Malha aberta: ", pontos_malha_aberta)
 print("Malha ziegler: ", pontos_ziegler_nichols)
 print("Malha Cohen: ", pontos_cohen_coon)
 
-plt_malhas(t1,f1, t2,f2, t3,f3)
+plt_malhas(*malha_aberta, *malha_fechada_Ziegler, *malha_fechada_Cohen)
 
 
-
-
-
-
+'''

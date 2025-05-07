@@ -6,8 +6,9 @@ import numpy as np
 import pandas as pd
 from control.matlab import tf, feedback, step
 import sistema_PID as pid
+from Graficos import plt_Ziegler_Nichols 
 
-# === Carregar Dataset ===
+'''# === Carregar Dataset ===
 df = pid.dataset
 t = df['Tempo'].values
 u = df['Temperatura'].values
@@ -31,15 +32,53 @@ def simular_pid(kp, ti, td):
     pid = tf([kp*td, kp, kp/ti], [1, 0])
     malha = feedback(pid * sys, 1)
     t_out, y_out = step(malha, T=t)
-    return t_out, y_out
+    return t_out, y_out'''
 
 # === Função ao clicar no botão ===
 def simular():
+    
+    # Carrega Dataset
+    df = pid.load_dataset()
+
+    t = df['Tempo'].astype(float).values
+   # setpoint = 100
+
+    # Método de Smith
+    k ,tau, theta = pid.metodo_smith(df["Tempo"].values, df['Resultado Fisico'].values)
+
+    # Calculo da função de transferencia 
+    funcao_malha_aberta, malha_aberta = pid.funcao_transferencia(k, tau, theta, t)
+
+    # Calcula os parametros da malha aberta
+    param_malha_aberta = pid.analisar_parametros(*malha_aberta)
+
+    # Le o valor do Setpoint
+    
+    setpoint_str = entry_setpoint.get().strip()
+    try:
+        setpoint = float(setpoint_str)
+    except ValueError:
+        setpoint = 100
+        return
+
+    # Calcula os parametros PID para cada método
     metodo = metodo_var.get()
     if metodo == "Ziegler-Nichols":
-        kp = 1.2 * tau / (k * theta)
-        ti = 2 * theta
-        td = theta / 2
+        # Calcula os parametros do PID
+        kp, ki, kd, ti, td = pid.ziegler_nichols(k ,tau, theta)
+        
+        # Cria uma malha fechada com o controlador PID
+        funcao_ziegler, malha_fechada_ziegler = pid.cria_malha_fechada(kp, ki, kd, funcao_malha_aberta, setpoint, t)
+
+        # Analisa os parametros relacionados aos dados do grafico de Ziegler-Nichols
+        param_ziegler_nichols = pid.analisar_parametros(*malha_fechada_ziegler)
+
+        #output_label.config(text=f"Kp={kp:.2f}, Ti={ti:.2f}, Td={td:.2f}")
+
+        # Plota o grafico de Ziegle-Nichols 
+        plt_Ziegler_Nichols(ax, canvas, *malha_aberta, *malha_fechada_ziegler)
+
+
     elif metodo == "Cohen-Coon":
         kp = (tau / (k * theta)) * ((16 * theta + 3 * tau) / (12 * tau))
         ti = theta * (32 + 6 * (theta / tau)) / (13 + 8 * (theta / tau))
@@ -52,17 +91,6 @@ def simular():
         except:
             output_label.config(text="Erro: valores manuais inválidos.")
             return
-
-    t_sim, y_sim = simular_pid(kp, ti, td)
-    ax.clear()
-    ax.plot(t, y, label="Original")
-    ax.plot(t_sim, y_sim, label="Controlado", linestyle="--")
-    ax.set_title("Resposta do Sistema com PID")
-    ax.set_xlabel("Tempo (s)")
-    ax.set_ylabel("Temperatura")
-    ax.grid(True)
-    ax.legend()
-    canvas.draw()
 
     output_label.config(text=f"Kp={kp:.2f}, Ti={ti:.2f}, Td={td:.2f}")
 
