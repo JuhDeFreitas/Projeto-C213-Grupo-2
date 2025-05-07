@@ -8,7 +8,7 @@ O projeto busca aplicar um sistema controlado PID para o controle da temperatura
 
 1) Analise do conjunto de dados
 
-  - Variavel de tempo: Tempo (s)
+  - Variavel de tempo: Tempo (
   - Variavel de referência: Temperatura (°C) 
   - Variavel controlada: Resultado Fisico (°C) 
 
