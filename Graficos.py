@@ -63,8 +63,10 @@ def plt_modelo_ajustado(t, f, t_ajustado, f_ajustado, dataset):
     plt.show()
 
 
-def plt_Ziegler_Nichols(ax, canvas, t_modelo, f_modelo, t_pid, f_pid):
-    
+def plt_Ziegler_Nichols(ax, canvas, t_modelo, f_modelo, t_pid, f_pid, p):
+    # Parametros a serem plotados no grafico
+    tr, ts, erro, mp, mp_t, overshoot = p
+
     # Encontra o primeiro índice onde f > 0
     idx = np.argmax(f_pid > 0)
 
@@ -83,12 +85,54 @@ def plt_Ziegler_Nichols(ax, canvas, t_modelo, f_modelo, t_pid, f_pid):
     ax.set_title("Resposta da Malha Fechada com Controle PID (Ziegler-Nichols)")
     ax.set_xlabel("Tempo (s)")
     ax.set_ylabel("Temperatura (°C)")
-    ax.grid(True)
+    #ax.grid(True)
     ax.legend()
+
+    ax.plot(mp_t, mp, 'ro', label='Pico')
+    ax.annotate(
+        "Pico",
+        xy=(mp_t, mp),            # ponto alvo
+        xytext=(mp_t + 2, mp + 2),  # posição do texto
+        textcoords="data",        
+        fontsize=9,
+        color="black",
+        arrowprops=dict(arrowstyle="->", color="gray", linewidth=0.8)
+    )
+
+    ax.axvline(x=tr, color='gray', linestyle='--',linewidth=0.7, label='Tr')
+    ax.plot(tr, 0, 'ro')
+    ax.annotate(
+        "Tr",
+        xy=(tr, 0),            # ponto alvo
+        xytext=(tr + 2, 0 + 2),  # posição do texto
+        textcoords="data",        
+        fontsize=9,
+        color="black",
+        arrowprops=dict(arrowstyle="->", color="gray", linewidth=0.8)
+    )
+
+
+    ax.axvline(x=ts, color='gray', linestyle='--',linewidth=0.7, label='Ts')
+    ax.plot(ts, 0, 'ro')
+    ax.annotate(
+        "Ts",
+        xy=(ts, 0),            # ponto alvo
+        xytext=(ts + 2, 0 + 2),  # posição do texto
+        textcoords="data",        
+        fontsize=9,
+        color="black",
+        arrowprops=dict(arrowstyle="->", color="gray", linewidth=0.8)
+    )
+
+
+    ax.legend()
+    
     canvas.draw()
 
 
-def plt_Cohen_Coon(ax, canvas, t_modelo, f_modelo, t_pid, f_pid):
+def plt_Cohen_Coon(ax, canvas, t_modelo, f_modelo, t_pid, f_pid, p):
+    # Parametros a serem plotados no grafico
+    tr, ts, erro, mp, mp_t, overshoot = p
     
     # Encontra o primeiro índice onde f > 0
     idx = np.argmax(f_pid > 0)
@@ -108,8 +152,45 @@ def plt_Cohen_Coon(ax, canvas, t_modelo, f_modelo, t_pid, f_pid):
     ax.set_title("Resposta da Malha Fechada com Controle PID (Cohen-Coon)")
     ax.set_xlabel("Tempo (s)")
     ax.set_ylabel("Temperatura (°C)")
-    ax.grid(True)
+    #ax.grid(True)
     ax.legend()
+
+    
+    ax.plot(mp_t, mp, 'ro', label='Pico')
+    ax.annotate(
+        "Pico",
+        xy=(mp_t, mp),            # ponto alvo
+        xytext=(mp_t + 2, mp + 2),  # posição do texto
+        textcoords="data",        
+        fontsize=9,
+        color="black",
+        arrowprops=dict(arrowstyle="->", color="gray", linewidth=0.8)
+    )
+
+    ax.axvline(x=tr, color='gray', linestyle='--',linewidth=0.7, label='Tr')
+    ax.plot(tr, 0, 'ro')
+    ax.annotate(
+        "Tr",
+        xy=(tr, 0),            # ponto alvo
+        xytext=(tr + 2, 0 + 2),  # posição do texto
+        textcoords="data",        
+        fontsize=9,
+        color="black",
+        arrowprops=dict(arrowstyle="->", color="gray", linewidth=0.8)
+    )
+
+
+    ax.axvline(x=ts, color='gray', linestyle='--',linewidth=0.7, label='Ts')
+    ax.plot(ts, 0, 'ro')
+    ax.annotate(
+        "Ts",
+        xy=(ts, 0),            # ponto alvo
+        xytext=(ts + 2, 0 + 2),  # posição do texto
+        textcoords="data",        
+        fontsize=9,
+        color="black",
+        arrowprops=dict(arrowstyle="->", color="gray", linewidth=0.8)
+    )
     canvas.draw()
     
     

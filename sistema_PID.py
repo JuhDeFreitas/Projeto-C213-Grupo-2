@@ -56,7 +56,6 @@ def metodo_smith(tempo, resposta, u0=0, uf=1):
 
 def funcao_transferencia(k, tau, theta, t, ordem_pade=1):
   """  Gera a função de transferência de um sistema FOPDT  """
-
   # Parte sem atraso
   H_sem_atraso = ctrl.tf([k], [tau, 1])
 
@@ -107,12 +106,12 @@ def cria_malha_fechada(kp, ki, kd, malha_aberta,setpoint, t):
 def analisar_parametros(t, f, ref=1.0, tolerancia=0.02):
     f_final = f[-1]
     
-    # Tempo de subida: de 10% a 90% do valor final
+    # Tr - Tempo de subida: de 10% a 90% do valor final
     idx_10 = np.argmax(f >= 0.1 * f_final)
     idx_90 = np.argmax(f >= 0.9 * f_final)
     tempo_subida = t[idx_90] - t[idx_10]
 
-    # Tempo de acomodação: quando entra e permanece dentro da faixa de tolerância
+    # Ts - Tempo de acomodação: quando entra e permanece dentro da faixa de tolerância
     superior = f_final * (1 + tolerancia)
     inferior = f_final * (1 - tolerancia)
     for i in range(len(f)-1, -1, -1):
