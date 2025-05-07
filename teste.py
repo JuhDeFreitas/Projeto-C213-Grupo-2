@@ -8,6 +8,17 @@ from control.matlab import tf, feedback, step
 import sistema_PID as pid
 from Graficos import plt_Ziegler_Nichols, plt_Cohen_Coon
 
+def atualizar_entradas():
+    metodo = metodo_var.get()
+    if metodo == "Ziegler-Nichols" or metodo == "Cohen-Coon":
+        entry_kp.config(state="disabled")
+        entry_ti.config(state="disabled")
+        entry_td.config(state="disabled")
+    else:
+        entry_kp.config(state="normal")
+        entry_ti.config(state="normal")
+        entry_td.config(state="normal")
+
 # === Função ao clicar no botão ===
 def simular():
     
