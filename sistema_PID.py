@@ -27,6 +27,10 @@ def load_dataset():
   
   return df
 
+#simular sudaresan
+#comparar EQM
+#ajustes no modelo escolhido
+
 def metodo_smith(tempo, resposta, u0=0, uf=1):
     """Estima os parâmetros K, tau e theta pelo método de Smith."""
 
@@ -127,6 +131,11 @@ def analisar_parametros(t, f, ref=1.0, tolerancia=0.02):
     overshoot_percent = ((pico_maximo - f_final) / f_final) * 100 if f_final != 0 else 0
 
     return tempo_subida, tempo_acomodacao, erro_regime, pico_maximo, tempo_pico, overshoot_percent
+
+#plotar os pontos importantes nos graficos!!!!!!!!
+# add metodo manual se der
+# criar README descritivo
+
 
 
 '''

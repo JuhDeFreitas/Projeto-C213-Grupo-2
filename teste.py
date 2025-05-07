@@ -8,32 +8,6 @@ from control.matlab import tf, feedback, step
 import sistema_PID as pid
 from Graficos import plt_Ziegler_Nichols, plt_Cohen_Coon
 
-'''# === Carregar Dataset ===
-df = pid.dataset
-t = df['Tempo'].values
-u = df['Temperatura'].values
-y = df['Resultado Fisico'].values
-
-# === Identificação com Sundaresan ===
-final_value = np.mean(y[int(len(y)*0.9):])
-y1_target = 0.353 * final_value
-y2_target = 0.853 * final_value
-t1 = t[np.where(y >= y1_target)[0][0]]
-t2 = t[np.where(y >= y2_target)[0][0]]
-tau = (2/3) * (t2 - t1)
-theta = 1.3 * t1 - 0.29 * t2
-k = (max(y) - min(y)) / (max(u) - min(u))
-
-# === Modelo de processo ===
-sys = tf([k], [tau, 1])  # Sem atraso para simplificar na IHM
-
-# === Função para simular PID ===
-def simular_pid(kp, ti, td):
-    pid = tf([kp*td, kp, kp/ti], [1, 0])
-    malha = feedback(pid * sys, 1)
-    t_out, y_out = step(malha, T=t)
-    return t_out, y_out'''
-
 # === Função ao clicar no botão ===
 def simular():
     
