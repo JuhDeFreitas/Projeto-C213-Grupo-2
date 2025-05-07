@@ -51,8 +51,8 @@ O projeto busca aplicar um sistema controlado PID para o controle da temperatura
   Com os parâmetros PID calculados pelos métodos de sintonia (Ziegler-Nichols e Cohen-Coon), o controlador PID é implementado para ajustar a temperatura do processo de branqueamento térmico da glicerina, mantendo a saída controlada e aproximando-a do setpoint desejado.
 
   <div align="center">
-  <img src="image-4.png" alt="alt text" width="600"/>
-  <img src="image-5.png" alt="alt text" width="600"/>
+  <img src="image-4.png" alt="alt text" width="500"/>
+  <img src="image-5.png" alt="alt text" width="500"/>
   </div>
 
 6) Comparação entre os sistemas de malha aberta e fechada 
