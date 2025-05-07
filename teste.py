@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from control.matlab import tf, feedback, step
 import sistema_PID as pid
-from Graficos import plt_Ziegler_Nichols 
+from Graficos import plt_Ziegler_Nichols, plt_Cohen_Coon
 
 '''# === Carregar Dataset ===
 df = pid.dataset
@@ -73,16 +73,20 @@ def simular():
         # Analisa os parametros relacionados aos dados do grafico de Ziegler-Nichols
         param_ziegler_nichols = pid.analisar_parametros(*malha_fechada_ziegler)
 
-        #output_label.config(text=f"Kp={kp:.2f}, Ti={ti:.2f}, Td={td:.2f}")
-
         # Plota o grafico de Ziegle-Nichols 
         plt_Ziegler_Nichols(ax, canvas, *malha_aberta, *malha_fechada_ziegler)
-
-
     elif metodo == "Cohen-Coon":
-        kp = (tau / (k * theta)) * ((16 * theta + 3 * tau) / (12 * tau))
-        ti = theta * (32 + 6 * (theta / tau)) / (13 + 8 * (theta / tau))
-        td = 4 * theta / (11 + 2 * (theta / tau))
+         # Calcula os parametros do PID
+        kp, ki, kd, ti, td = pid.cohen_coon(k ,tau, theta)
+        
+        # Cria uma malha fechada com o controlador PID
+        funcao_cohen, malha_fechada_cohen = pid.cria_malha_fechada(kp, ki, kd, funcao_malha_aberta, setpoint, t)
+
+        # Analisa os parametros relacionados aos dados do grafico de Ziegler-Nichols
+        param_cohen_coon = pid.analisar_parametros(*malha_fechada_cohen)
+
+        # Plota o grafico de Ziegle-Nichols 
+        plt_Cohen_Coon(ax, canvas, *malha_aberta, *malha_fechada_cohen)
     else:
         try:
             kp = float(entry_kp.get())

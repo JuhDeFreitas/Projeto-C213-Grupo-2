@@ -71,12 +71,41 @@ def plt_Ziegler_Nichols(ax, canvas, t_modelo, f_modelo, t_pid, f_pid):
     # Corta os vetores a partir desse índice
     t_pid = t_pid[idx:]
     f_pid = f_pid[idx:]
+
+    idx = np.argmax(f_modelo > 0)
+    t_modelo = t_modelo[idx:]
+    f_modelo = f_modelo[idx:]
     
     ax.clear()
     ax.plot(t_modelo, f_modelo, label="Resposta Original", color="gray")
     ax.plot(t_pid, f_pid, label="Controle Ziegler-Nichols (PID)", linestyle="--", color="red")
 
     ax.set_title("Resposta da Malha Fechada com Controle PID (Ziegler-Nichols)")
+    ax.set_xlabel("Tempo (s)")
+    ax.set_ylabel("Temperatura (°C)")
+    ax.grid(True)
+    ax.legend()
+    canvas.draw()
+
+
+def plt_Cohen_Coon(ax, canvas, t_modelo, f_modelo, t_pid, f_pid):
+    
+    # Encontra o primeiro índice onde f > 0
+    idx = np.argmax(f_pid > 0)
+
+    # Corta os vetores a partir desse índice
+    t_pid = t_pid[idx:]
+    f_pid = f_pid[idx:]
+
+    idx = np.argmax(f_modelo > 0)
+    t_modelo = t_modelo[idx:]
+    f_modelo = f_modelo[idx:]
+    
+    ax.clear()
+    ax.plot(t_modelo, f_modelo, label="Resposta Original", color="gray")
+    ax.plot(t_pid, f_pid, label="Controle Cohen-Coon (PID)", linestyle="--", color="red")
+
+    ax.set_title("Resposta da Malha Fechada com Controle PID (Cohen-Coon)")
     ax.set_xlabel("Tempo (s)")
     ax.set_ylabel("Temperatura (°C)")
     ax.grid(True)
