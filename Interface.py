@@ -5,10 +5,18 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import pandas as pd
 from control.matlab import tf, feedback, step
-import sistema_PID as pid
+import Sistema_PID as pid
 from Graficos import plt_Ziegler_Nichols, plt_Cohen_Coon
 
-def atualizar_entradas():
+def get_setpoint():
+    setpoint_str = entry_setpoint.get().strip()
+    if not setpoint_str:
+        setpoint = 100.0
+    else:
+        setpoint = float(setpoint_str)
+    return setpoint
+
+def atualiza_entradas():
     metodo = metodo_var.get()
     if metodo == "Ziegler-Nichols" or metodo == "Cohen-Coon":
         entry_kp.config(state="disabled")
@@ -19,32 +27,41 @@ def atualizar_entradas():
         entry_ti.config(state="normal")
         entry_td.config(state="normal")
 
+def print_parametros(p):
+    tr, ts, erro, mp, mp_t, overshoot = p
+    print(p)
+
+    output_param_label.config(text=(
+        "Parametros de desempenho:"
+        f"\nTr = {tr:.2f} "
+        f"\nTs = {ts:.2f} "
+        f"\nMp = {mp:.2f} "
+        #f"\nOvershoot = {overshoot:.2f}"
+    ))
+
+
+
+# Carrega Dataset
+df = pid.load_dataset()
+
+t = df['Tempo'].astype(float).values    # Auxiliar de tempo
+
+# Aplica Método de Smith
+k ,tau, theta = pid.metodo_smith(df["Tempo"].values, df['Resultado Fisico'].values)
+
+# Calculo da função de transferencia 
+funcao_malha_aberta, malha_aberta = pid.funcao_transferencia(k, tau, theta, t)
+
+# Calculo dos parametros de malha aberta
+param_malha_aberta = pid.analisar_parametros(*malha_aberta)
+
+
 # === Função ao clicar no botão ===
 def simular():
     
-    # Carrega Dataset
-    df = pid.load_dataset()
+    setpoint = get_setpoint()   # Le o valor do Setpoint
 
-    t = df['Tempo'].astype(float).values
-   # setpoint = 100
-
-    # Método de Smith
-    k ,tau, theta = pid.metodo_smith(df["Tempo"].values, df['Resultado Fisico'].values)
-
-    # Calculo da função de transferencia 
-    funcao_malha_aberta, malha_aberta = pid.funcao_transferencia(k, tau, theta, t)
-
-    # Calcula os parametros da malha aberta
-    param_malha_aberta = pid.analisar_parametros(*malha_aberta)
-
-    # Le o valor do Setpoint
-    
-    setpoint_str = entry_setpoint.get().strip()
-    try:
-        setpoint = float(setpoint_str)
-    except ValueError:
-        setpoint = 100
-        return
+    atualiza_entradas()
 
     # Calcula os parametros PID para cada método
     metodo = metodo_var.get()
@@ -59,7 +76,8 @@ def simular():
         param_ziegler_nichols = pid.analisar_parametros(*malha_fechada_ziegler)
 
         # Plota o grafico de Ziegle-Nichols 
-        plt_Ziegler_Nichols(ax, canvas, *malha_aberta, *malha_fechada_ziegler)
+        plt_Ziegler_Nichols(ax, canvas, *malha_aberta, *malha_fechada_ziegler, param_ziegler_nichols)
+        print_parametros(param_ziegler_nichols)
     elif metodo == "Cohen-Coon":
          # Calcula os parametros do PID
         kp, ki, kd, ti, td = pid.cohen_coon(k ,tau, theta)
@@ -71,8 +89,9 @@ def simular():
         param_cohen_coon = pid.analisar_parametros(*malha_fechada_cohen)
 
         # Plota o grafico de Ziegle-Nichols 
-        plt_Cohen_Coon(ax, canvas, *malha_aberta, *malha_fechada_cohen)
-    else:
+        plt_Cohen_Coon(ax, canvas, *malha_aberta, *malha_fechada_cohen, param_cohen_coon)
+        print_parametros(param_cohen_coon)
+    else:   # Método Manual
         try:
             kp = float(entry_kp.get())
             ti = float(entry_ti.get())
@@ -82,35 +101,13 @@ def simular():
             return
 
 
-    t_sim, y_sim = simular_pid(kp, ti, td)
+    output_label.config(text=(
+        "\nParametros de PID:              "
+        f"\nKp = {kp:.2f} "
+        f"\nTi = {ti:.2f} "
+        f"\nTd = {td:.2f} "))
 
-    # Limpar gráfico e plotar a nova resposta
-    ax.clear()
-    ax.plot(t, y, label="Original", color='blue')
-    ax.plot(t_sim, y_sim, label="Controlado", linestyle="--", color='red')
 
-    # Atualizar o gráfico
-    ax.set_title("Resposta do Sistema com PID")
-    ax.set_xlabel("Tempo (s)")
-    ax.set_ylabel("Temperatura")
-    ax.grid(True)
-    ax.legend()
-    canvas.draw()
-
-    # Exibir os parâmetros PID
-    output_label.config(text=f"Kp={kp:.2f}, Ti={ti:.2f}, Td={td:.2f}")
-
-# === Função para desabilitar ou habilitar os campos Kp, Ti, Td ===
-def atualizar_entradas():
-    metodo = metodo_var.get()
-    if metodo == "Ziegler-Nichols" or metodo == "Cohen-Coon":
-        entry_kp.config(state="disabled")
-        entry_ti.config(state="disabled")
-        entry_td.config(state="disabled")
-    else:
-        entry_kp.config(state="normal")
-        entry_ti.config(state="normal")
-        entry_td.config(state="normal")
 
 # === Criar janela ===
 root = tk.Tk()
@@ -126,7 +123,7 @@ metodo_menu = ttk.Combobox(frame, textvariable=metodo_var, values=["Ziegler-Nich
 metodo_menu.grid(row=0, column=1)
 
 # Quando o método mudar, atualizar os campos
-metodo_menu.bind("<<ComboboxSelected>>", lambda e: atualizar_entradas())
+metodo_menu.bind("<<ComboboxSelected>>", lambda e: atualiza_entradas())
 
 # Entrada de dados pelo usuário
 ttk.Label(frame, text="Kp:").grid(row=1, column=0)
@@ -146,8 +143,12 @@ entry_setpoint = ttk.Entry(frame)
 entry_setpoint.grid(row=4, column=1)
 
 ttk.Button(frame, text="Simular", command=simular).grid(row=5, columnspan=2, pady=10)
-output_label = ttk.Label(frame, text="Parâmetros PID aparecerão aqui.")
+output_label = ttk.Label(frame)
 output_label.grid(row=6, columnspan=2)
+
+output_param_label = ttk.Label(frame)
+output_param_label.grid(row=7, columnspan=2)
+
 
 # === Gráfico ===
 fig, ax = plt.subplots(figsize=(6, 4))
@@ -155,6 +156,6 @@ canvas = FigureCanvasTkAgg(fig, master=root)
 canvas.get_tk_widget().grid(row=0, column=1)
 
 # Inicializa as entradas com os valores corretos
-atualizar_entradas()
+atualiza_entradas()
 
 root.mainloop()
