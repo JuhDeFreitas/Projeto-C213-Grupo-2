@@ -77,11 +77,40 @@ def simular():
             kp = float(entry_kp.get())
             ti = float(entry_ti.get())
             td = float(entry_td.get())
-        except:
+        except ValueError:
             output_label.config(text="Erro: valores manuais inválidos.")
             return
 
+
+    t_sim, y_sim = simular_pid(kp, ti, td)
+
+    # Limpar gráfico e plotar a nova resposta
+    ax.clear()
+    ax.plot(t, y, label="Original", color='blue')
+    ax.plot(t_sim, y_sim, label="Controlado", linestyle="--", color='red')
+
+    # Atualizar o gráfico
+    ax.set_title("Resposta do Sistema com PID")
+    ax.set_xlabel("Tempo (s)")
+    ax.set_ylabel("Temperatura")
+    ax.grid(True)
+    ax.legend()
+    canvas.draw()
+
+    # Exibir os parâmetros PID
     output_label.config(text=f"Kp={kp:.2f}, Ti={ti:.2f}, Td={td:.2f}")
+
+# === Função para desabilitar ou habilitar os campos Kp, Ti, Td ===
+def atualizar_entradas():
+    metodo = metodo_var.get()
+    if metodo == "Ziegler-Nichols" or metodo == "Cohen-Coon":
+        entry_kp.config(state="disabled")
+        entry_ti.config(state="disabled")
+        entry_td.config(state="disabled")
+    else:
+        entry_kp.config(state="normal")
+        entry_ti.config(state="normal")
+        entry_td.config(state="normal")
 
 # === Criar janela ===
 root = tk.Tk()
@@ -96,7 +125,10 @@ metodo_var = tk.StringVar(value="Ziegler-Nichols")
 metodo_menu = ttk.Combobox(frame, textvariable=metodo_var, values=["Ziegler-Nichols", "Cohen-Coon", "Manual"])
 metodo_menu.grid(row=0, column=1)
 
-#Entrada de dados pelo usuàrio
+# Quando o método mudar, atualizar os campos
+metodo_menu.bind("<<ComboboxSelected>>", lambda e: atualizar_entradas())
+
+# Entrada de dados pelo usuário
 ttk.Label(frame, text="Kp:").grid(row=1, column=0)
 entry_kp = ttk.Entry(frame)
 entry_kp.grid(row=1, column=1)
@@ -113,7 +145,6 @@ ttk.Label(frame, text="Set Point:").grid(row=4, column=0)
 entry_setpoint = ttk.Entry(frame)
 entry_setpoint.grid(row=4, column=1)
 
-
 ttk.Button(frame, text="Simular", command=simular).grid(row=5, columnspan=2, pady=10)
 output_label = ttk.Label(frame, text="Parâmetros PID aparecerão aqui.")
 output_label.grid(row=6, columnspan=2)
@@ -122,5 +153,8 @@ output_label.grid(row=6, columnspan=2)
 fig, ax = plt.subplots(figsize=(6, 4))
 canvas = FigureCanvasTkAgg(fig, master=root)
 canvas.get_tk_widget().grid(row=0, column=1)
+
+# Inicializa as entradas com os valores corretos
+atualizar_entradas()
 
 root.mainloop()
