@@ -88,9 +88,9 @@ def plt_Ziegler_Nichols(ax, canvas, t_modelo, f_modelo, t_pid, f_pid, p):
     #ax.grid(True)
     ax.legend()
 
-    ax.plot(mp_t, mp, 'ro', label='Pico')
+    ax.plot(mp_t, mp, 'ro', label='mp')
     ax.annotate(
-        "Pico",
+        "mp",
         xy=(mp_t, mp),            # ponto alvo
         xytext=(mp_t + 2, mp + 2),  # posição do texto
         textcoords="data",        
@@ -123,7 +123,6 @@ def plt_Ziegler_Nichols(ax, canvas, t_modelo, f_modelo, t_pid, f_pid, p):
         color="black",
         arrowprops=dict(arrowstyle="->", color="gray", linewidth=0.8)
     )
-
 
     ax.legend()
     
@@ -156,7 +155,70 @@ def plt_Cohen_Coon(ax, canvas, t_modelo, f_modelo, t_pid, f_pid, p):
     ax.legend()
 
     
-    ax.plot(mp_t, mp, 'ro', label='Pico')
+    ax.plot(mp_t, mp, 'ro', label='mp')
+    ax.annotate(
+        "mp",
+        xy=(mp_t, mp),            # ponto alvo
+        xytext=(mp_t + 2, mp + 2),  # posição do texto
+        textcoords="data",        
+        fontsize=9,
+        color="black",
+        arrowprops=dict(arrowstyle="->", color="gray", linewidth=0.8)
+    )
+
+    ax.axvline(x=tr, color='gray', linestyle='--',linewidth=0.7, label='Tr')
+    ax.plot(tr, 0, 'ro')
+    ax.annotate(
+        "Tr",
+        xy=(tr, 0),            # ponto alvo
+        xytext=(tr + 2, 0 + 2),  # posição do texto
+        textcoords="data",        
+        fontsize=9,
+        color="black",
+        arrowprops=dict(arrowstyle="->", color="gray", linewidth=0.8)
+    )
+
+
+    ax.axvline(x=ts, color='gray', linestyle='--',linewidth=0.7, label='Ts')
+    ax.plot(ts, 0, 'ro')
+    ax.annotate(
+        "Ts",
+        xy=(ts, 0),            # ponto alvo
+        xytext=(ts + 2, 0 + 2),  # posição do texto
+        textcoords="data",        
+        fontsize=9,
+        color="black",
+        arrowprops=dict(arrowstyle="->", color="gray", linewidth=0.8)
+    )
+    canvas.draw()
+
+def plt_Manual(ax, canvas, t_modelo, f_modelo, t_pid, f_pid, p):
+    # Parametros a serem plotados no grafico
+    tr, ts, erro, mp, mp_t, overshoot = p
+
+    # Encontra o primeiro índice onde f > 0
+    idx = np.argmax(f_pid > 0)
+
+    # Corta os vetores a partir desse índice
+    t_pid = t_pid[idx:]
+    f_pid = f_pid[idx:]
+
+    idx = np.argmax(f_modelo > 0)
+    t_modelo = t_modelo[idx:]
+    f_modelo = f_modelo[idx:]
+
+    ax.clear()
+    ax.plot(t_modelo, f_modelo, label="Resposta Original", color="gray")
+    ax.plot(t_pid, f_pid, label="Controle Manual (PID)", linestyle="--", color="red")
+
+    ax.set_title("Resposta da Malha Fechada com Controle PID (Manual)")
+    ax.set_xlabel("Tempo (s)")
+    ax.set_ylabel("Temperatura (°C)")
+    #ax.grid(True)
+    ax.legend()
+
+
+    ax.plot(mp_t, mp, 'ro', label='mp')
     ax.annotate(
         "Pico",
         xy=(mp_t, mp),            # ponto alvo
@@ -192,7 +254,7 @@ def plt_Cohen_Coon(ax, canvas, t_modelo, f_modelo, t_pid, f_pid, p):
         arrowprops=dict(arrowstyle="->", color="gray", linewidth=0.8)
     )
     canvas.draw()
-    
+
     
 
 def plt_malhas(t1, f1, t2, f2, t3, f3):

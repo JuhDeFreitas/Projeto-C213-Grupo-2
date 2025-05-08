@@ -79,13 +79,13 @@ def simular():
         plt_Ziegler_Nichols(ax, canvas, *malha_aberta, *malha_fechada_ziegler, param_ziegler_nichols)
         print_parametros(param_ziegler_nichols)
     elif metodo == "Cohen-Coon":
-         # Calcula os parametros do PID
+        # Calcula os parametros do PID
         kp, ki, kd, ti, td = pid.cohen_coon(k ,tau, theta)
         
         # Cria uma malha fechada com o controlador PID
         funcao_cohen, malha_fechada_cohen = pid.cria_malha_fechada(kp, ki, kd, funcao_malha_aberta, setpoint, t)
 
-        # Analisa os parametros relacionados aos dados do grafico de Ziegler-Nichols
+        # Analisa os parametros relacionados aos dados do grafico de Cohen Coon
         param_cohen_coon = pid.analisar_parametros(*malha_fechada_cohen)
 
         # Plota o grafico de Ziegle-Nichols 
@@ -99,6 +99,18 @@ def simular():
         except ValueError:
             output_label.config(text="Erro: valores manuais inválidos.")
             return
+        ki = kp/ti
+        kd = kp*td
+
+        # Cria uma malha fechada com o controlador PID
+        funcao_manual, malha_fechada_manual = pid.cria_malha_fechada(kp, ki, kd, funcao_malha_aberta, setpoint, t)
+
+        # Analisa os parametros relacionados aos dados do grafico de 
+        param_manual = pid.analisar_parametros(*malha_fechada_manual)
+
+        # Plota o grafico de Ziegle-Nichols 
+        plt_Cohen_Coon(ax, canvas, *malha_aberta, *malha_fechada_manual, param_manual)
+        print_parametros(param_manual)
 
 
     output_label.config(text=(

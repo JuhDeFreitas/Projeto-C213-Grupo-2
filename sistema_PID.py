@@ -27,9 +27,7 @@ def load_dataset():
   
   return df
 
-#simular sudaresan
-#comparar EQM
-#ajustes no modelo escolhido
+
 
 def metodo_smith(tempo, resposta, u0=0, uf=1):
     """Estima os parâmetros K, tau e theta pelo método de Smith."""
@@ -54,7 +52,7 @@ def metodo_smith(tempo, resposta, u0=0, uf=1):
 
     return k, tau, theta
 
-def funcao_transferencia(k, tau, theta, t, ordem_pade=1):
+def funcao_transferencia(k, tau, theta, t, ordem_pade=20):
   """  Gera a função de transferência de um sistema FOPDT  """
   # Parte sem atraso
   H_sem_atraso = ctrl.tf([k], [tau, 1])
@@ -131,49 +129,4 @@ def analisar_parametros(t, f, ref=1.0, tolerancia=0.02):
 
     return tempo_subida, tempo_acomodacao, erro_regime, pico_maximo, tempo_pico, overshoot_percent
 
-#plotar os pontos importantes nos graficos!!!!!!!!
-# add metodo manual se der
-# criar README descritivo
 
-
-
-'''
-# Carrega o dataset
-dataset = load_dataset()
-
-# Mostra os dados iniciais 
-plt_dataset(dataset)
-
-# Calculo pelo metodo de Smith
-k, tau, theta = metodo_smith(dataset['Tempo'].values, dataset['Resultado Fisico'].values)
-
-t = dataset['Tempo'].astype(float).values
-
-# Calculo da func. de Tranferencia
-funcao_H, malha_aberta = funcao_transferencia(k, tau, theta, t)
-
-# Grafico com o Modelo da Função de Tranferencia
-plt_modelo(dataset, *malha_aberta)
-
-setpoint = 100 #media dos valores da entrada
-
-# Malha fechada Ziegler Nichols
-kp, ki, kd, ti, td = ziegler_nichols(k, tau, theta)
-funcao_Ziegler, malha_fechada_Ziegler = cria_malha_fechada(kp, ki, kd, funcao_H, setpoint, t)
-
-# Malha fechada Cohen Coon
-kp, ki, kd, ti, td = cohen_coon(k, tau, theta)
-funcao_Cohen, malha_fechada_Cohen = cria_malha_fechada(kp, ki, kd, funcao_H, setpoint, t)
-
-pontos_malha_aberta = analisar_parametros(*malha_aberta)
-pontos_ziegler_nichols = analisar_parametros(*malha_fechada_Ziegler)
-pontos_cohen_coon = analisar_parametros(*malha_fechada_Cohen)
-
-print("Malha aberta: ", pontos_malha_aberta)
-print("Malha ziegler: ", pontos_ziegler_nichols)
-print("Malha Cohen: ", pontos_cohen_coon)
-
-plt_malhas(*malha_aberta, *malha_fechada_Ziegler, *malha_fechada_Cohen)
-
-
-'''
